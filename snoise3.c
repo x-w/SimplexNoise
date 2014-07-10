@@ -68,23 +68,23 @@ void permsetup(NoiseContext *nc) {
         nc->offsets[i][k][l] = offs_init[i][k][l];
 }
 
-float noise3(float x, float y, float z, NoiseContext *nc) __attribute__ ((force_align_arg_pointer));
-float noise3(float x, float y, float z, NoiseContext *nc) {
+float noise3(float x, float y, float z, NoiseContext *nc);
+float  noise3(float x, float y, float z, NoiseContext *nc) /*__attribute__ ((force_align_arg_pointer))*/ {
   v4sf vs[4], vsum;
   int gi[4], mask, c;
-  v4sf v0;
+  //v4sf v0;
   v4sf v = vec4f(x, y, z, 0);
   v4si indices;
   
   vsum = v + vec1_4f(sum3(v) / 3);
-  indices = __builtin_ia32_psubd128 (__builtin_ia32_cvttps2dq(vsum), __builtin_ia32_psrldi128 ((v4si) vsum, 31));
+  indices = _mm_sub_epi32 (__builtin_ia32_cvttps2dq(vsum), __builtin_ia32_psrldi128 ((v4si) vsum, 31));
   vs[0] = v - __builtin_ia32_cvtdq2ps(indices) + vec1_4f(isum(indices) / 6.0f);
   vs[1] = vs[0] + vec1_4f(     1.0f/6.0f);
   vs[2] = vs[0] + vec1_4f(     2.0f/6.0f);
   vs[3] = vs[0] + vec1_4f(-1.0f + 3.0f/6.0f);
-  v4sf xxy = __builtin_ia32_shufps(vs[0], vs[0], _MM_SHUFFLE(0, 1, 0, 0));
-  v4sf yzz = __builtin_ia32_shufps(vs[0], vs[0], _MM_SHUFFLE(0, 2, 2, 1));
-  mask = __builtin_ia32_movmskps(__builtin_ia32_cmpltps(xxy, yzz));
+  v4sf xxy = _mm_shuffle_ps(vs[0], vs[0], _MM_SHUFFLE(0, 1, 0, 0));
+  v4sf yzz = _mm_shuffle_ps(vs[0], vs[0], _MM_SHUFFLE(0, 2, 2, 1));
+  mask = __builtin_ia32_movmskps(_mm_cmplt_ps(xxy, yzz));
   LET(opp, &nc->offsets[mask & 7]);
   #define op (*opp)
   #define offs1 (op[0])
@@ -115,9 +115,10 @@ float noise3(float x, float y, float z, NoiseContext *nc) {
     LET(current, *vscp);
     {
       LET(A, current * current);
-      LET(B, __builtin_ia32_shufps(A, A, _MM_SHUFFLE(1, 1, 1, 1)));
-      LET(C, __builtin_ia32_shufps(A, A, _MM_SHUFFLE(2, 2, 2, 2)));
-      LET(D, A + B + C);
+      LET(B, _mm_shuffle_ps(A, A, _MM_SHUFFLE(1, 1, 1, 1)));
+      LET(C, _mm_shuffle_ps(A, A, _MM_SHUFFLE(2, 2, 2, 2)));
+      //LET(D, A + B + C);
+      v4sf D = A + B + C;
       LET(E, vec1_4f(0.6f) - D);
       factors[c] = *(float*) &E;
     }
