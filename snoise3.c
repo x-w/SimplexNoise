@@ -1,13 +1,9 @@
 #include "xmmintrin.h"
 #include "emmintrin.h"
+#include "SimplexNoise.h"
 
 typedef float v4sf __attribute__ ((vector_size (16)));
 typedef int v4si __attribute__ ((vector_size (16)));
-
-typedef struct {
-  int offsets[8][2][4];
-  unsigned char *perm, *mperm; // perm mod 12
-} NoiseContext;
 
 #define LET(A, B) typeof(B) A = B
 
@@ -68,7 +64,6 @@ void permsetup(NoiseContext *nc) {
         nc->offsets[i][k][l] = offs_init[i][k][l];
 }
 
-float noise3(float x, float y, float z, NoiseContext *nc);
 float  noise3(float x, float y, float z, NoiseContext *nc) /*__attribute__ ((force_align_arg_pointer))*/ {
   v4sf vs[4], vsum;
   int gi[4], mask, c;
